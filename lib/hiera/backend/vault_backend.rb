@@ -56,6 +56,12 @@ class Hiera
         if not ['ignore','only'].include?(@config[:default_field_behavior])
           raise Exception, "[hiera-vault] invalid value for :default_field_behavior: '#{@config[:default_field_behavior]}', should be one of 'ignore','only'"
         end
+        if @config[:custom_hierarchy].nil?
+          @custom_hierarchy = nil
+        else
+          @custom_hierarchy = @config[:custom_hierarchy]
+        end
+        Hiera.debug("[hiera-vault] Using custom_hierarchy #{@custom_hierarchy}")
 
         vault_connect
       end
@@ -123,7 +129,7 @@ class Hiera
             # Only generic mounts supported so far
             @config[:mounts][:generic].each do |mount|
               path = Backend.parse_string(mount, scope, { 'key' => key })
-              Backend.datasources(scope, order_override) do |source|
+              Backend.datasources(scope, order_override, @custom_hierarchy) do |source|
                 Hiera.debug("Looking in path #{path}/#{source}/")
                 new_answer = lookup_generic("#{path}/#{source}/#{key}", scope)
                 #Hiera.debug("[hiera-vault] Answer: #{new_answer}:#{new_answer.class}")
@@ -153,7 +159,7 @@ class Hiera
 
             @config[:mounts][:generic].each do |mount|
               path = Backend.parse_string(mount, scope, { 'key' => key })
-              Backend.datasources(scope, order_override) do |source|
+              Backend.datasources(scope, order_override, @custom_hierarchy) do |source|
                 # Storing the generated secret in the override path or the highest path in the hierarchy
                 # make sure to use a proper override or an appropriate hierarchy if the secret is to be used
                 # on different nodes, otherwise the same key might be written with a different value at different
