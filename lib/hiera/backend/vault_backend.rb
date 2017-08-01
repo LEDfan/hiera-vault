@@ -180,7 +180,19 @@ class Hiera
             @vault = Vault::Client.new
             @vault.configure do |config|
               config.address = @config[:addr] if @config[:addr]
-              config.token = @config[:token] if @config[:token]
+              if @config[:token].nil? # if no token provided use the approle method to authenticate
+                # read the secert from disk since storing it in hiera is equally
+                # secure as storing the token in hiera
+                if @config[:secret_id_path].nil?
+                  secret_id_path = "/var/lib/vault/secret_id" # default path
+                else
+                  secret_id_path = @config[:secret_id_path]
+                end
+                secret_id = File.read(secret_id_path)
+                @vault.auth.approle(@config[:role_id], secret_id)
+              else
+                config.token = @config[:token] unless @config[:token].nil?
+              end
               config.ssl_pem_file = @config[:ssl_pem_file] if @config[:ssl_pem_file]
               config.ssl_verify = @config[:ssl_verify] if @config[:ssl_verify]
               config.ssl_ca_cert = @config[:ssl_ca_cert] if config.respond_to? :ssl_ca_cert
