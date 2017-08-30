@@ -241,6 +241,28 @@ In some cases it might be desired to have a different password on each node. In 
 `$::fqdn` can be used as the override parameter.
 
 
+### Custom hierarchy
+
+When using a large hierarchy in hiera, the process for looking up all parameters
+can take long. To prevent this a vault specific hiearchy can be provided.
+
+```
+:backends:
+    - vault
+
+:hierarchy:
+  - "nodes/%{::fqdn}"
+  - "hostclass/%{::hostclass}"
+  - ...
+  - common
+
+:vault:
+    :addr: ...
+    :custom_hiearchy:
+      - "nodes/%{::fqdn}"
+      - common/common
+```
+
 ## SSL
 
 SSL can be configured with the following config variables:
